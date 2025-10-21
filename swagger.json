@@ -1,0 +1,1946 @@
+{
+    "openapi": "3.0.0",
+    "info": {
+        "title": "Smart Invoice Generator API",
+        "description": "REST API to create and manage invoices for small contractors (like electricians, plumbers, etc.) with PDF generation and email capabilities.",
+        "version": "1.0.0",
+        "contact": {
+            "name": "API Support",
+            "email": "support@invoiceapi.com"
+        },
+        "license": {
+            "name": "MIT",
+            "url": "https://opensource.org/licenses/MIT"
+        }
+    },
+    "servers": [
+        {
+            "url": "http://localhost:3000/api",
+            "description": "Development server"
+        },
+        {
+            "url": "https://api.invoicegenerator.com/api",
+            "description": "Production server"
+        }
+    ],
+    "tags": [
+        {
+            "name": "Clients",
+            "description": "Client management endpoints"
+        },
+        {
+            "name": "Services",
+            "description": "Service catalog management"
+        },
+        {
+            "name": "Invoices",
+            "description": "Invoice creation, management, and distribution"
+        },
+        {
+            "name": "Email",
+            "description": "Email sending and management endpoints"
+        },
+        {
+            "name": "Health",
+            "description": "API health check"
+        }
+    ],
+    "paths": {
+        "/health": {
+            "get": {
+                "tags": [
+                    "Health"
+                ],
+                "summary": "Health Check",
+                "description": "Check if the API is running properly",
+                "responses": {
+                    "200": {
+                        "description": "API is healthy",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HealthResponse"
+                                },
+                                "example": {
+                                    "success": true,
+                                    "message": "Smart Invoice Generator API is running",
+                                    "timestamp": "2024-01-15T10:30:00.000Z"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/email/invoices/{id}/send": {
+            "post": {
+                "tags": [
+                    "Email"
+                ],
+                "summary": "Send invoice via email",
+                "description": "Send an invoice as PDF attachment to the client's email",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "description": "Invoice ID",
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/EmailSendRequest"
+                            },
+                            "example": {
+                                "email": "custom@example.com",
+                                "subject": "Your Invoice - Custom Subject",
+                                "customMessage": "Thank you for your business! We appreciate your prompt payment."
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Email sent successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/EmailSendResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "No email address available",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Invoice not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Email sending failed",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/email/invoices/bulk-send": {
+            "post": {
+                "tags": [
+                    "Email"
+                ],
+                "summary": "Send multiple invoices via email",
+                "description": "Send multiple invoices to their respective clients",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/BulkEmailSendRequest"
+                            },
+                            "example": {
+                                "invoiceIds": [
+                                    1,
+                                    2,
+                                    3
+                                ],
+                                "customMessage": "Please find your invoice attached. Thank you for your business!"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Bulk email sending completed",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/BulkEmailSendResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid input",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Bulk email sending failed",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/email/invoices/{id}/reminder": {
+            "post": {
+                "tags": [
+                    "Email"
+                ],
+                "summary": "Send payment reminder",
+                "description": "Send a payment reminder for an invoice",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "description": "Invoice ID",
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ReminderSendRequest"
+                            },
+                            "example": {
+                                "reminderType": "urgent"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Reminder sent successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ReminderSendResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "No email address available",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Invoice not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Reminder sending failed",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/email/test": {
+            "post": {
+                "tags": [
+                    "Email"
+                ],
+                "summary": "Test email configuration",
+                "description": "Send a test email to verify email configuration",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/TestEmailRequest"
+                            },
+                            "example": {
+                                "testEmail": "test@example.com"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Test email sent successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TestEmailResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "testEmail is required",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Test email failed",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/clients": {
+            "get": {
+                "tags": [
+                    "Clients"
+                ],
+                "summary": "Get all clients",
+                "description": "Retrieve a list of all clients",
+                "responses": {
+                    "200": {
+                        "description": "Successful operation",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ClientsListResponse"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "Clients"
+                ],
+                "summary": "Create a new client",
+                "description": "Add a new client to the system",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ClientInput"
+                            },
+                            "example": {
+                                "name": "John Smith",
+                                "email": "john@example.com",
+                                "phone": "+1234567890",
+                                "address": "123 Main St, City, State"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Client created successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ClientResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid input",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/clients/{id}": {
+            "get": {
+                "tags": [
+                    "Clients"
+                ],
+                "summary": "Get client by ID",
+                "description": "Retrieve a specific client by their ID",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "description": "Client ID",
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful operation",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ClientResponse"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Client not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "put": {
+                "tags": [
+                    "Clients"
+                ],
+                "summary": "Update client",
+                "description": "Update an existing client's information",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "description": "Client ID",
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ClientInput"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Client updated successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ClientResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid input",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Client not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "Clients"
+                ],
+                "summary": "Delete client",
+                "description": "Delete a client from the system",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "description": "Client ID",
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Client deleted successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SuccessResponse"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Client not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/services": {
+            "get": {
+                "tags": [
+                    "Services"
+                ],
+                "summary": "Get all services",
+                "description": "Retrieve a list of all available services",
+                "responses": {
+                    "200": {
+                        "description": "Successful operation",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ServicesListResponse"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "Services"
+                ],
+                "summary": "Create a new service",
+                "description": "Add a new service to the catalog",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ServiceInput"
+                            },
+                            "example": {
+                                "name": "Electrical Repair",
+                                "description": "General electrical repair services",
+                                "rate": 75.00
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Service created successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ServiceResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid input",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/services/{id}": {
+            "get": {
+                "tags": [
+                    "Services"
+                ],
+                "summary": "Get service by ID",
+                "description": "Retrieve a specific service by its ID",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "description": "Service ID",
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful operation",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ServiceResponse"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Service not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "put": {
+                "tags": [
+                    "Services"
+                ],
+                "summary": "Update service",
+                "description": "Update an existing service's information",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "description": "Service ID",
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ServiceInput"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Service updated successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ServiceResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid input",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Service not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "Services"
+                ],
+                "summary": "Delete service",
+                "description": "Delete a service from the catalog",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "description": "Service ID",
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Service deleted successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SuccessResponse"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Service not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/invoices": {
+            "get": {
+                "tags": [
+                    "Invoices"
+                ],
+                "summary": "Get all invoices",
+                "description": "Retrieve a list of all invoices with client details",
+                "responses": {
+                    "200": {
+                        "description": "Successful operation",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/InvoicesListResponse"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "Invoices"
+                ],
+                "summary": "Create a new invoice",
+                "description": "Create a new invoice with automatic calculation of totals and GST",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/InvoiceInput"
+                            },
+                            "example": {
+                                "client_id": 1,
+                                "invoice_date": "2024-01-15",
+                                "due_date": "2024-01-30",
+                                "notes": "Thank you for your business!",
+                                "items": [
+                                    {
+                                        "service_id": 1,
+                                        "quantity": 2,
+                                        "description": "Electrical repair work",
+                                        "rate": 75.00
+                                    },
+                                    {
+                                        "service_id": 2,
+                                        "quantity": 1,
+                                        "description": "Consultation fee"
+                                    }
+                                ]
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Invoice created successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/InvoiceResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid input or client/service not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/invoices/{id}": {
+            "get": {
+                "tags": [
+                    "Invoices"
+                ],
+                "summary": "Get invoice by ID",
+                "description": "Retrieve a specific invoice with full details including items",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "description": "Invoice ID",
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful operation",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/InvoiceResponse"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Invoice not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "Invoices"
+                ],
+                "summary": "Delete invoice",
+                "description": "Delete an invoice from the system",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "description": "Invoice ID",
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Invoice deleted successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SuccessResponse"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Invoice not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/invoices/{id}/pdf": {
+            "get": {
+                "tags": [
+                    "Invoices"
+                ],
+                "summary": "Generate PDF invoice",
+                "description": "Generate and download a PDF version of the invoice",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "description": "Invoice ID",
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "PDF generated successfully",
+                        "content": {
+                            "application/pdf": {
+                                "schema": {
+                                    "type": "string",
+                                    "format": "binary"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Invoice not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "PDF generation failed",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/invoices/{id}/send": {
+            "post": {
+                "tags": [
+                    "Invoices"
+                ],
+                "summary": "Send invoice via email",
+                "description": "Send the invoice as a PDF attachment via email to the client",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "description": "Invoice ID",
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "email": {
+                                        "type": "string",
+                                        "format": "email",
+                                        "description": "Override client email address"
+                                    }
+                                }
+                            },
+                            "example": {
+                                "email": "custom@example.com"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Email sent successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SuccessResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "No email address available",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Invoice not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Email sending failed",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/invoices/{id}/status": {
+            "put": {
+                "tags": [
+                    "Invoices"
+                ],
+                "summary": "Update invoice status",
+                "description": "Update the status of an invoice (draft, sent, paid, overdue)",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "description": "Invoice ID",
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "required": [
+                                    "status"
+                                ],
+                                "properties": {
+                                    "status": {
+                                        "type": "string",
+                                        "enum": [
+                                            "draft",
+                                            "sent",
+                                            "paid",
+                                            "overdue"
+                                        ],
+                                        "example": "paid"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Status updated successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/InvoiceResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid status",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Invoice not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "components": {
+        "schemas": {
+            "HealthResponse": {
+                "type": "object",
+                "properties": {
+                    "success": {
+                        "type": "boolean",
+                        "example": true
+                    },
+                    "message": {
+                        "type": "string",
+                        "example": "Smart Invoice Generator API is running"
+                    },
+                    "timestamp": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                }
+            },
+            "SuccessResponse": {
+                "type": "object",
+                "properties": {
+                    "success": {
+                        "type": "boolean",
+                        "example": true
+                    },
+                    "message": {
+                        "type": "string",
+                        "example": "Operation completed successfully"
+                    }
+                }
+            },
+            "ErrorResponse": {
+                "type": "object",
+                "properties": {
+                    "success": {
+                        "type": "boolean",
+                        "example": false
+                    },
+                    "message": {
+                        "type": "string",
+                        "example": "Error description"
+                    }
+                }
+            },
+            "EmailSendRequest": {
+                "type": "object",
+                "properties": {
+                    "email": {
+                        "type": "string",
+                        "format": "email",
+                        "description": "Override client email address"
+                    },
+                    "subject": {
+                        "type": "string",
+                        "description": "Custom email subject"
+                    },
+                    "customMessage": {
+                        "type": "string",
+                        "description": "Custom email message"
+                    }
+                }
+            },
+            "EmailSendResponse": {
+                "type": "object",
+                "properties": {
+                    "success": {
+                        "type": "boolean",
+                        "example": true
+                    },
+                    "message": {
+                        "type": "string",
+                        "example": "Invoice sent successfully"
+                    },
+                    "data": {
+                        "type": "object",
+                        "properties": {
+                            "messageId": {
+                                "type": "string",
+                                "description": "Email message ID"
+                            },
+                            "recipient": {
+                                "type": "string",
+                                "format": "email",
+                                "example": "client@example.com"
+                            },
+                            "invoiceNumber": {
+                                "type": "string",
+                                "example": "INV-2024-0001"
+                            },
+                            "status": {
+                                "type": "string",
+                                "enum": [
+                                    "sent",
+                                    "draft"
+                                ],
+                                "example": "sent"
+                            }
+                        }
+                    }
+                }
+            },
+            "BulkEmailSendRequest": {
+                "type": "object",
+                "required": [
+                    "invoiceIds"
+                ],
+                "properties": {
+                    "invoiceIds": {
+                        "type": "array",
+                        "items": {
+                            "type": "integer",
+                            "format": "int64"
+                        },
+                        "description": "Array of invoice IDs to send"
+                    },
+                    "customMessage": {
+                        "type": "string",
+                        "description": "Custom message for all emails"
+                    }
+                }
+            },
+            "BulkEmailSendResponse": {
+                "type": "object",
+                "properties": {
+                    "success": {
+                        "type": "boolean",
+                        "example": true
+                    },
+                    "message": {
+                        "type": "string",
+                        "example": "Bulk email sending completed. Successful: 3, Failed: 0"
+                    },
+                    "data": {
+                        "type": "object",
+                        "properties": {
+                            "successful": {
+                                "type": "array",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "invoiceId": {
+                                            "type": "integer",
+                                            "example": 1
+                                        },
+                                        "invoiceNumber": {
+                                            "type": "string",
+                                            "example": "INV-2024-0001"
+                                        },
+                                        "recipient": {
+                                            "type": "string",
+                                            "format": "email",
+                                            "example": "client@example.com"
+                                        }
+                                    }
+                                }
+                            },
+                            "failed": {
+                                "type": "array",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "invoiceId": {
+                                            "type": "integer",
+                                            "example": 2
+                                        },
+                                        "invoiceNumber": {
+                                            "type": "string",
+                                            "example": "INV-2024-0002"
+                                        },
+                                        "error": {
+                                            "type": "string",
+                                            "example": "Client has no email address"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "ReminderSendRequest": {
+                "type": "object",
+                "properties": {
+                    "reminderType": {
+                        "type": "string",
+                        "enum": [
+                            "gentle",
+                            "urgent",
+                            "final"
+                        ],
+                        "default": "gentle",
+                        "description": "Type of reminder"
+                    }
+                }
+            },
+            "ReminderSendResponse": {
+                "type": "object",
+                "properties": {
+                    "success": {
+                        "type": "boolean",
+                        "example": true
+                    },
+                    "message": {
+                        "type": "string",
+                        "example": "Reminder sent successfully"
+                    },
+                    "data": {
+                        "type": "object",
+                        "properties": {
+                            "messageId": {
+                                "type": "string",
+                                "description": "Email message ID"
+                            },
+                            "recipient": {
+                                "type": "string",
+                                "format": "email",
+                                "example": "client@example.com"
+                            },
+                            "invoiceNumber": {
+                                "type": "string",
+                                "example": "INV-2024-0001"
+                            },
+                            "reminderType": {
+                                "type": "string",
+                                "enum": [
+                                    "gentle",
+                                    "urgent",
+                                    "final"
+                                ],
+                                "example": "urgent"
+                            },
+                            "status": {
+                                "type": "string",
+                                "example": "reminder_sent"
+                            }
+                        }
+                    }
+                }
+            },
+            "TestEmailRequest": {
+                "type": "object",
+                "required": [
+                    "testEmail"
+                ],
+                "properties": {
+                    "testEmail": {
+                        "type": "string",
+                        "format": "email",
+                        "description": "Email address to send test to"
+                    }
+                }
+            },
+            "TestEmailResponse": {
+                "type": "object",
+                "properties": {
+                    "success": {
+                        "type": "boolean",
+                        "example": true
+                    },
+                    "message": {
+                        "type": "string",
+                        "example": "Test email sent successfully"
+                    },
+                    "data": {
+                        "type": "object",
+                        "properties": {
+                            "messageId": {
+                                "type": "string",
+                                "description": "Email message ID"
+                            },
+                            "recipient": {
+                                "type": "string",
+                                "format": "email",
+                                "example": "test@example.com"
+                            },
+                            "status": {
+                                "type": "string",
+                                "example": "test_sent"
+                            }
+                        }
+                    }
+                }
+            },
+            "ClientInput": {
+                "type": "object",
+                "required": [
+                    "name"
+                ],
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "description": "Client's full name",
+                        "example": "John Smith"
+                    },
+                    "email": {
+                        "type": "string",
+                        "format": "email",
+                        "description": "Client's email address",
+                        "example": "john@example.com"
+                    },
+                    "phone": {
+                        "type": "string",
+                        "description": "Client's phone number",
+                        "example": "+1234567890"
+                    },
+                    "address": {
+                        "type": "string",
+                        "description": "Client's physical address",
+                        "example": "123 Main St, City, State"
+                    }
+                }
+            },
+            "Client": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "format": "int64",
+                        "example": 1
+                    },
+                    "name": {
+                        "type": "string",
+                        "example": "John Smith"
+                    },
+                    "email": {
+                        "type": "string",
+                        "example": "john@example.com"
+                    },
+                    "phone": {
+                        "type": "string",
+                        "example": "+1234567890"
+                    },
+                    "address": {
+                        "type": "string",
+                        "example": "123 Main St, City, State"
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                }
+            },
+            "ClientResponse": {
+                "type": "object",
+                "properties": {
+                    "success": {
+                        "type": "boolean",
+                        "example": true
+                    },
+                    "data": {
+                        "$ref": "#/components/schemas/Client"
+                    }
+                }
+            },
+            "ClientsListResponse": {
+                "type": "object",
+                "properties": {
+                    "success": {
+                        "type": "boolean",
+                        "example": true
+                    },
+                    "data": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/Client"
+                        }
+                    }
+                }
+            },
+            "ServiceInput": {
+                "type": "object",
+                "required": [
+                    "name",
+                    "rate"
+                ],
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "description": "Service name",
+                        "example": "Electrical Repair"
+                    },
+                    "description": {
+                        "type": "string",
+                        "description": "Service description",
+                        "example": "General electrical repair services"
+                    },
+                    "rate": {
+                        "type": "number",
+                        "format": "float",
+                        "description": "Hourly rate or fixed price",
+                        "example": 75.00
+                    }
+                }
+            },
+            "Service": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "format": "int64",
+                        "example": 1
+                    },
+                    "name": {
+                        "type": "string",
+                        "example": "Electrical Repair"
+                    },
+                    "description": {
+                        "type": "string",
+                        "example": "General electrical repair services"
+                    },
+                    "rate": {
+                        "type": "number",
+                        "format": "float",
+                        "example": 75.00
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                }
+            },
+            "ServiceResponse": {
+                "type": "object",
+                "properties": {
+                    "success": {
+                        "type": "boolean",
+                        "example": true
+                    },
+                    "data": {
+                        "$ref": "#/components/schemas/Service"
+                    }
+                }
+            },
+            "ServicesListResponse": {
+                "type": "object",
+                "properties": {
+                    "success": {
+                        "type": "boolean",
+                        "example": true
+                    },
+                    "data": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/Service"
+                        }
+                    }
+                }
+            },
+            "InvoiceItemInput": {
+                "type": "object",
+                "required": [
+                    "service_id",
+                    "quantity"
+                ],
+                "properties": {
+                    "service_id": {
+                        "type": "integer",
+                        "format": "int64",
+                        "description": "Service ID",
+                        "example": 1
+                    },
+                    "quantity": {
+                        "type": "integer",
+                        "description": "Quantity of service",
+                        "example": 2
+                    },
+                    "description": {
+                        "type": "string",
+                        "description": "Custom description (overrides service description)",
+                        "example": "Electrical repair work"
+                    },
+                    "rate": {
+                        "type": "number",
+                        "format": "float",
+                        "description": "Custom rate (overrides service rate)",
+                        "example": 80.00
+                    }
+                }
+            },
+            "InvoiceInput": {
+                "type": "object",
+                "required": [
+                    "client_id",
+                    "invoice_date",
+                    "due_date",
+                    "items"
+                ],
+                "properties": {
+                    "client_id": {
+                        "type": "integer",
+                        "format": "int64",
+                        "description": "Client ID",
+                        "example": 1
+                    },
+                    "invoice_date": {
+                        "type": "string",
+                        "format": "date",
+                        "description": "Invoice date",
+                        "example": "2024-01-15"
+                    },
+                    "due_date": {
+                        "type": "string",
+                        "format": "date",
+                        "description": "Due date",
+                        "example": "2024-01-30"
+                    },
+                    "notes": {
+                        "type": "string",
+                        "description": "Additional notes",
+                        "example": "Thank you for your business!"
+                    },
+                    "items": {
+                        "type": "array",
+                        "description": "Invoice line items",
+                        "items": {
+                            "$ref": "#/components/schemas/InvoiceItemInput"
+                        }
+                    }
+                }
+            },
+            "InvoiceItem": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "format": "int64",
+                        "example": 1
+                    },
+                    "service_id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "service_name": {
+                        "type": "string",
+                        "example": "Electrical Repair"
+                    },
+                    "description": {
+                        "type": "string",
+                        "example": "Electrical repair work"
+                    },
+                    "quantity": {
+                        "type": "integer",
+                        "example": 2
+                    },
+                    "rate": {
+                        "type": "number",
+                        "format": "float",
+                        "example": 75.00
+                    },
+                    "amount": {
+                        "type": "number",
+                        "format": "float",
+                        "example": 150.00
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                }
+            },
+            "Invoice": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "format": "int64",
+                        "example": 1
+                    },
+                    "invoice_number": {
+                        "type": "string",
+                        "example": "INV-2024-0001"
+                    },
+                    "client_id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "client_name": {
+                        "type": "string",
+                        "example": "John Smith"
+                    },
+                    "client_email": {
+                        "type": "string",
+                        "example": "john@example.com"
+                    },
+                    "client_phone": {
+                        "type": "string",
+                        "example": "+1234567890"
+                    },
+                    "client_address": {
+                        "type": "string",
+                        "example": "123 Main St, City, State"
+                    },
+                    "invoice_date": {
+                        "type": "string",
+                        "format": "date",
+                        "example": "2024-01-15"
+                    },
+                    "due_date": {
+                        "type": "string",
+                        "format": "date",
+                        "example": "2024-01-30"
+                    },
+                    "status": {
+                        "type": "string",
+                        "enum": [
+                            "draft",
+                            "sent",
+                            "paid",
+                            "overdue"
+                        ],
+                        "example": "sent"
+                    },
+                    "subtotal": {
+                        "type": "number",
+                        "format": "float",
+                        "example": 150.00
+                    },
+                    "gst_amount": {
+                        "type": "number",
+                        "format": "float",
+                        "example": 27.00
+                    },
+                    "total_amount": {
+                        "type": "number",
+                        "format": "float",
+                        "example": 177.00
+                    },
+                    "notes": {
+                        "type": "string",
+                        "example": "Thank you for your business!"
+                    },
+                    "items": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/InvoiceItem"
+                        }
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                }
+            },
+            "InvoiceResponse": {
+                "type": "object",
+                "properties": {
+                    "success": {
+                        "type": "boolean",
+                        "example": true
+                    },
+                    "data": {
+                        "$ref": "#/components/schemas/Invoice"
+                    }
+                }
+            },
+            "InvoicesListResponse": {
+                "type": "object",
+                "properties": {
+                    "success": {
+                        "type": "boolean",
+                        "example": true
+                    },
+                    "data": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/Invoice"
+                        }
+                    }
+                }
+            }
+        },
+        "parameters": {
+            "clientId": {
+                "name": "id",
+                "in": "path",
+                "required": true,
+                "description": "Client ID",
+                "schema": {
+                    "type": "integer",
+                    "format": "int64"
+                }
+            },
+            "serviceId": {
+                "name": "id",
+                "in": "path",
+                "required": true,
+                "description": "Service ID",
+                "schema": {
+                    "type": "integer",
+                    "format": "int64"
+                }
+            },
+            "invoiceId": {
+                "name": "id",
+                "in": "path",
+                "required": true,
+                "description": "Invoice ID",
+                "schema": {
+                    "type": "integer",
+                    "format": "int64"
+                }
+            }
+        }
+    }
+}
